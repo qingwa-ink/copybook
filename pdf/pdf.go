@@ -13,15 +13,15 @@ const (
 	PageHeight                            = 841.89
 	MarginWidth                           = 48.0
 	MarginHeight                          = 56.0
-	FontSize                              = 32.0
 	LineHeight                            = 18.0
-	LineWords                             = 12
 	ColorTableR, ColorTableG, ColorTableB = 0x01, 0x01, 0x01
 	ColorLineR, ColorLineG, ColorLineB    = 0xcc, 0xcc, 0xcc
 	ColorTextR, ColorTextG, ColorTextB    = 0xaa, 0xaa, 0xaa
 )
 
 var (
+	LineWords    = 12
+	FontSize     = 32
 	TableLeft    = 0.0
 	TableRight   = 0.0
 	TableTop     = 0.0
@@ -44,7 +44,7 @@ func MakePdf(filePath, content string) {
 	// TODO 绘制表格
 	DrawTable(pdf)
 
-	// TODO 借款表单部分
+	// TODO 文本内容部分
 	err = InsertText(pdf, content)
 	if err != nil {
 		fmt.Printf("err : %s\n", err.Error())
@@ -63,11 +63,11 @@ func getPdf() (pdf *gopdf.GoPdf, err error) {
 	pdf = &gopdf.GoPdf{}
 
 	info := gopdf.PdfInfo{
-		Title:        "Loan Agreement",
-		Subject:      "Loan Agreement",
-		Producer:     "Opera&MobiMagic",
-		Author:       "Opera&MobiMagic",
-		Creator:      "Opera&MobiMagic",
+		Title:        "Copybook",
+		Subject:      "Copybook",
+		Producer:     "qingwa.ink",
+		Author:       "qingwa.ink",
+		Creator:      "qingwa.ink",
 		CreationDate: time.Now(),
 	}
 	pdf.SetInfo(info)
@@ -80,16 +80,18 @@ func getPdf() (pdf *gopdf.GoPdf, err error) {
 		return
 	}
 
+	pdf.SetStrokeColor(0x01, 0x01, 0x01)
+	pdf.SetLineWidth(0.5)
+	TableLeft = MarginWidth
+	TableRight = PageWidth - MarginWidth
+	TableDivider = (TableRight - TableLeft) / float64(LineWords)
+	FontSize = int(TableDivider * 9 / 10)
+
 	err = pdf.SetFont("good", "", FontSize)
 	if err != nil {
 		log.Print(err.Error())
 		return
 	}
-	pdf.SetStrokeColor(0x01, 0x01, 0x01)
-	pdf.SetLineWidth(0.5)
-	TableLeft = MarginWidth
-	TableRight = PageWidth - MarginWidth
-	TableDivider = (TableRight - TableLeft) / LineWords
 
 	pdf.SetX(MarginWidth)
 	pdf.SetY(MarginHeight)
@@ -133,8 +135,8 @@ func InsertText(pdf *gopdf.GoPdf, text string) (err error) {
 	for index, data := range datas {
 		row := index / LineWords
 		col := index % LineWords
-		pdf.SetX(float64(col)*TableDivider + TableLeft + (TableDivider-FontSize)/2)
-		pdf.SetY(float64(row)*TableDivider + MarginHeight + (TableDivider-FontSize)/2)
+		pdf.SetX(float64(col)*TableDivider + TableLeft + (TableDivider-float64(FontSize))/2)
+		pdf.SetY(float64(row)*TableDivider + MarginHeight + (TableDivider-float64(FontSize))/2)
 		err = pdf.Cell(nil, string(data))
 	}
 
