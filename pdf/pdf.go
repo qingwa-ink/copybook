@@ -3,6 +3,7 @@ package pdf
 import (
 	"fmt"
 	"log"
+	"math"
 	"time"
 
 	"github.com/signintech/gopdf"
@@ -20,19 +21,20 @@ const (
 )
 
 var (
+	// LineWords 每行的文字数量
 	LineWords    = 12
-	FontSize     = 32
+	fontSize     = 32
 	TableLeft    = 0.0
 	TableRight   = 0.0
 	TableTop     = 0.0
-	TableBottom  = 0.0
+	tableBottom  = 0.0
 	TableDivider = 0.0
 )
 
-// MakePdf : Generate copybook file
+// MakePdfCn : Generate copybook file
 //
-// 生成字帖文件
-func MakePdf(filePath, content string) {
+// 生成中文字帖文件
+func MakePdfCn(filePath, content string) {
 
 	pdf, err := getPdf()
 
@@ -42,10 +44,10 @@ func MakePdf(filePath, content string) {
 	}
 
 	// TODO 绘制表格
-	DrawTable(pdf)
+	drawTable(pdf)
 
 	// TODO 文本内容部分
-	err = InsertText(pdf, content)
+	err = insertText(pdf, content)
 	if err != nil {
 		fmt.Printf("err : %s\n", err.Error())
 		return
@@ -85,9 +87,9 @@ func getPdf() (pdf *gopdf.GoPdf, err error) {
 	TableLeft = MarginWidth
 	TableRight = PageWidth - MarginWidth
 	TableDivider = (TableRight - TableLeft) / float64(LineWords)
-	FontSize = int(TableDivider * 9 / 10)
+	fontSize = int(TableDivider * 9 / 10)
 
-	err = pdf.SetFont("good", "", FontSize)
+	err = pdf.SetFont("good", "", fontSize)
 	if err != nil {
 		log.Print(err.Error())
 		return
@@ -98,13 +100,15 @@ func getPdf() (pdf *gopdf.GoPdf, err error) {
 
 	return
 }
-func DrawTable(pdf *gopdf.GoPdf) (err error) {
+
+func drawTable(pdf *gopdf.GoPdf) (err error) {
 
 	size := (PageHeight - MarginHeight) / TableDivider
+	size = math.Floor(size)
 	height := 0.0
 
 	pdf.SetStrokeColor(ColorLineR, ColorLineG, ColorLineB)
-	for i := 0; i < int(size-1); i++ {
+	for i := 0; i < int(size); i++ {
 		height = MarginHeight + (float64(i)+0.5)*TableDivider
 		pdf.Line(TableLeft, height, TableRight, height)
 	}
@@ -115,7 +119,7 @@ func DrawTable(pdf *gopdf.GoPdf) (err error) {
 	}
 
 	pdf.SetStrokeColor(ColorTableR, ColorTableG, ColorTableB)
-	for i := 0; i < int(size); i++ {
+	for i := 0; i < int(size+1); i++ {
 		height = MarginHeight + float64(i)*TableDivider
 		pdf.Line(TableLeft, height, TableRight, height)
 	}
@@ -123,20 +127,33 @@ func DrawTable(pdf *gopdf.GoPdf) (err error) {
 		width := TableLeft + float64(i)*TableDivider
 		pdf.Line(width, MarginHeight, width, height)
 	}
+	tableBottom = height
 
 	return nil
 }
 
-func InsertText(pdf *gopdf.GoPdf, text string) (err error) {
+func insertText(pdf *gopdf.GoPdf, text string) (err error) {
 
 	pdf.SetTextColor(ColorTextR, ColorTextG, ColorTextB)
 
 	datas := []rune(text)
+	height := 0.0
 	for index, data := range datas {
-		row := index / LineWords
 		col := index % LineWords
-		pdf.SetX(float64(col)*TableDivider + TableLeft + (TableDivider-float64(FontSize))/2)
-		pdf.SetY(float64(row)*TableDivider + MarginHeight + (TableDivider-float64(FontSize))/2)
+		if height == 0 {
+			height = MarginHeight + (TableDivider-float64(fontSize))/2
+		} else {
+			if col == 0 {
+				height += TableDivider
+			}
+			if height >= tableBottom {
+				pdf.AddPage()
+				drawTable(pdf)
+				height = MarginHeight + (TableDivider-float64(fontSize))/2
+			}
+		}
+		pdf.SetY(height)
+		pdf.SetX(float64(col)*TableDivider + TableLeft + (TableDivider-float64(fontSize))/2)
 		err = pdf.Cell(nil, string(data))
 	}
 
