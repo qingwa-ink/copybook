@@ -14,7 +14,6 @@ const (
 	PageHeight                            = 841.89
 	MarginWidth                           = 48.0
 	MarginHeight                          = 56.0
-	LineHeight                            = 18.0
 	ColorTableR, ColorTableG, ColorTableB = 0x01, 0x01, 0x01
 	ColorLineR, ColorLineG, ColorLineB    = 0xcc, 0xcc, 0xcc
 	ColorTextR, ColorTextG, ColorTextB    = 0xaa, 0xaa, 0xaa
@@ -29,6 +28,7 @@ var (
 	TableTop     = 0.0
 	tableBottom  = 0.0
 	TableDivider = 0.0
+	LineHeight   = 18.0
 )
 
 // MakePdfCn : Generate copybook file
